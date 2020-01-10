@@ -1,7 +1,7 @@
 Summary: NIS (or YP) client programs
 Name: yp-tools
 Version: 2.9
-Release: 10%{?dist}
+Release: 12%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: ftp://ftp.kernel.org/pub/linux/utils/net/NIS/yp-tools-%{version}.tar.bz2
@@ -9,6 +9,7 @@ Url: http://www.linux-nis.org/nis/yp-tools/index.html
 Patch1: yp-tools-2.7-md5.patch
 # rhbz#487607
 Patch2: yp-tools-2.9-sha-2.patch
+Patch3: yp-tools-2.9-hash.patch
 Requires: ypbind
 Buildroot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
@@ -36,6 +37,7 @@ you'll need to install the ypserv package on one machine on the network.
 %setup -q
 %patch1 -p1 -b .md5
 %patch2 -p1 -b .sha-2
+%patch3 -p1 -b .hash
 
 %build
 %configure --disable-domainname
@@ -61,6 +63,16 @@ rm -rf $RPM_BUILD_ROOT
 %dir /var/yp
 
 %changelog
+* Mon Aug 22 2011 Honza Horak <hhorak@redhat.com> - 2.9-12
+- Fixed -hash patch to omit an old password check when shadow 
+  passwords or passwd.adjunct enabled and use correct password length
+  Resolves: #699666
+
+* Tue Jun 28 2011 Honza Horak <hhorak@redhat.com> - 2.9-11
+- Added YP_PASSWD_HASH environment variable to set default 
+  algorithm for hashing a new password
+  Resolves: #699666
+
 * Thu May 13 2010 Karel Klic <kklic@redhat.com> - 2.9-10
 - Rebuild to generate correct dwarf cfi data
   Resolves: #589920

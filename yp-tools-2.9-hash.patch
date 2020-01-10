@@ -1,0 +1,133 @@
+diff -up yp-tools-2.9/man/yppasswd.1.in.hash yp-tools-2.9/man/yppasswd.1.in
+--- yp-tools-2.9/man/yppasswd.1.in.hash	2004-06-21 13:44:15.000000000 +0200
++++ yp-tools-2.9/man/yppasswd.1.in	2011-08-22 12:17:45.069681676 +0200
+@@ -81,6 +81,12 @@ for authentication with the
+ .BR yppasswdd (8)
+ daemon. Subsequently, the
+ program prompts for the updated information:
++.P
++If we use shadowing passwords using passwd.adjunct, SHA-512 will be 
++used for hashing a new password by default. If we want to use MD5, 
++SHA_256 or older DES, we need to set the environment variable 
++YP_PASSWD_HASH. Possible values are "DES", "MD5", "SHA-256" and 
++"SHA-512" (value is case-insensitive).
+ .\"
+ .\"
+ .IP "\fByppasswd\fP or \fB-p\fP"
+diff -up yp-tools-2.9/src/yppasswd.c.hash yp-tools-2.9/src/yppasswd.c
+--- yp-tools-2.9/src/yppasswd.c.hash	2011-08-22 12:17:45.064681677 +0200
++++ yp-tools-2.9/src/yppasswd.c	2011-08-22 12:30:26.418629616 +0200
+@@ -370,6 +370,44 @@ getfield (char *gecos, char *field, int 
+   return sp;
+ }
+ 
++static int
++get_hash_id (const char *passwd)
++{
++  int hash_id = DES;
++  if (strncmp(passwd, "$1$", 3) == 0)
++    hash_id = MD5;
++  else if (strncmp(passwd, "$5$", 3) == 0)
++    hash_id = SHA_256;
++  else if (strncmp(passwd, "$6$", 3) == 0)
++    hash_id = SHA_512;
++  return hash_id;
++}
++
++static int
++get_passwd_len (const char *passwd)
++{
++  static const char *allowed_chars =
++    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
++  int passwdlen = strlen (passwd);
++  int hash_id = get_hash_id (passwd);
++
++  /* Some systems (HPU/X) store the password aging info after
++   * the password (with a comma to separate it). To support
++   * this we cut the password after the first invalid char
++   * after the normal 13 ones - in the case of MD5 and DES.
++   * We can't cut at the first invalid char, since MD5
++   * uses $ in the first char. In case of SHA-2 we are looking
++   * for first invalid char after the 38 ones.
++   */
++  if (passwdlen > 13 && (hash_id == DES || hash_id == MD5))
++      passwdlen = 13 + strspn (passwd + 13, allowed_chars);
++
++  if (passwdlen > 38 && (hash_id == SHA_256 || hash_id == SHA_512))
++      passwdlen = 38 + strspn (passwd + 38, allowed_chars);
++
++  return passwdlen;
++}
++
+ #if ! defined(USE_CRACKLIB) || defined(USE_CRACKLIB_STRICT)
+ /* this function will verify the user's password
+  * for some silly things.  If we're using cracklib, then
+@@ -381,6 +419,7 @@ verifypassword (struct passwd *pwd, char
+ {
+   char *p, *q;
+   int ucase, lcase, other, r;
++  int passwdlen;
+ 
+   if ((strlen (pwdstr) < 6) && uid)
+     {
+@@ -403,8 +442,11 @@ verifypassword (struct passwd *pwd, char
+       return 0;
+     }
+ 
++  passwdlen = get_passwd_len (pwd->pw_passwd);
+   if (pwd->pw_passwd[0]
+-      && !strncmp (pwd->pw_passwd, crypt (pwdstr, pwd->pw_passwd), 13)
++      && 0 != strcmp (pwd->pw_passwd, "x") /* don't check shadow passwords */
++      && 0 != strcmp (pwd->pw_passwd, "##") /* don't check passwd.adjunct passwords */
++      && !strncmp (pwd->pw_passwd, crypt (pwdstr, pwd->pw_passwd), passwdlen)
+       && uid)
+     {
+       fputs (_("You cannot reuse the old password.\n"), stderr);
+@@ -470,6 +512,31 @@ create_random_salt (char *salt, int num_
+ }
+ 
+ 
++/*
++ * Reads environment variable YP_PASSWD_HASH and returns hash id.
++ * Possible values are MD5, SHA-256, SHA-512 and DES.
++ * If other value is set or it is not set at all, SHA-512 is used.
++ */ 
++static int
++get_env_hash_id()
++{
++  const char *v = getenv("YP_PASSWD_HASH");
++  if (!v)
++    return SHA_512;
++
++  if (!strcasecmp(v, "DES"))
++    return DES;
++
++  if (!strcasecmp(v, "SHA-256"))
++    return SHA_256;
++
++  if (!strcasecmp(v, "MD5"))
++    return MD5;
++
++  return SHA_512;
++}
++
++
+ int
+ main (int argc, char **argv)
+ {
+@@ -689,6 +756,15 @@ main (int argc, char **argv)
+       if (strncmp(pwd->pw_passwd, "$6$", 3) == 0)
+         hash_id = SHA_512;
+ 
++      /* If we use passwd.adjunct, there is no magic value like $1$ in the 
++       * beginning of password, but ##username instead. Thus, SHA_512 will be 
++       * used for hashing a new password by default. If we want to use DES, 
++       * MD5 or SHA_256, we need to set the environment variable 
++       * YP_PASSWD_HASH (e.g. YP_PASSWD_HASH=DES).
++       */
++      if (strncmp(pwd->pw_passwd, "##", 2) == 0)
++        hash_id = get_env_hash_id();
++
+       /* Preserve 'rounds=<N>$' (if present) in case of SHA-2 */
+       if (hash_id == SHA_256 || hash_id == SHA_512)
+         if (strncmp(pwd->pw_passwd + 3, "rounds=", 7) == 0)
