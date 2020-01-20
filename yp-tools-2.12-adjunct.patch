@@ -1,0 +1,12 @@
+diff -up yp-tools-2.12/src/yppasswd.c.adjunct yp-tools-2.12/src/yppasswd.c
+--- yp-tools-2.12/src/yppasswd.c.adjunct	2012-04-23 13:17:47.000988833 +0200
++++ yp-tools-2.12/src/yppasswd.c	2012-04-23 13:18:01.209802938 +0200
+@@ -449,7 +449,7 @@ verifypassword (struct passwd *pwd, char
+ 
+   passwdlen = get_passwd_len (pwd->pw_passwd);
+   if (pwd->pw_passwd[0] 
+-      && 0 != strcmp (pwd->pw_passwd, "x") /* don't check shadow passwords */
++      && 0 != strcmp (pwd->pw_passwd, "##") /* don't check passwords using passwd.adjunct feature */
+       && uid)
+     {
+       char *crypted = crypt(pwdstr, pwd->pw_passwd);

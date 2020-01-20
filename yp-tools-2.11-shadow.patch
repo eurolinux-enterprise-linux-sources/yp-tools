@@ -1,0 +1,11 @@
+diff -up ./src/yppasswd.c.shadow ./src/yppasswd.c
+--- ./src/yppasswd.c.shadow	2010-04-21 11:24:15.000000000 +0200
++++ ./src/yppasswd.c	2013-05-06 22:31:39.984229577 +0200
+@@ -449,6 +449,7 @@ verifypassword (struct passwd *pwd, char
+ 
+   passwdlen = get_passwd_len (pwd->pw_passwd);
+   if (pwd->pw_passwd[0]
++      && 0 != strcmp (pwd->pw_passwd, "x") /* don't check shadow passwords */
+       && !strncmp (pwd->pw_passwd, crypt (pwdstr, pwd->pw_passwd), passwdlen)
+       && uid)
+     {
