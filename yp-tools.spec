@@ -1,7 +1,7 @@
 Summary: NIS (or YP) client programs
 Name: yp-tools
 Version: 2.14
-Release: 1%{?dist}
+Release: 3%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: http://www.linux-nis.org/download/yp-tools/yp-tools-%{version}.tar.bz2
@@ -60,6 +60,12 @@ make DESTDIR="$RPM_BUILD_ROOT" INSTALL_PROGRAM=install install
 /var/yp/nicknames
 
 %changelog
+* Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 2.14-3
+- Mass rebuild 2014-01-24
+
+* Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 2.14-2
+- Mass rebuild 2013-12-27
+
 * Mon May 06 2013 Honza Horak <hhorak@redhat.com> - 2.14-1
 - New upstream version 2.14
 
