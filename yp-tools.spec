@@ -1,7 +1,7 @@
 Summary: NIS (or YP) client programs
 Name: yp-tools
 Version: 2.14
-Release: 3%{?dist}
+Release: 5%{?dist}
 License: GPLv2
 Group: System Environment/Base
 Source: http://www.linux-nis.org/download/yp-tools/yp-tools-%{version}.tar.bz2
@@ -60,6 +60,12 @@ make DESTDIR="$RPM_BUILD_ROOT" INSTALL_PROGRAM=install install
 /var/yp/nicknames
 
 %changelog
+* Mon Jun 05 2017 Petr Kubat <pkubat@redhat.com> - 2.14-5
+- Properly fix adjunct check in yppasswd (#1401432)
+
+* Tue Jan 17 2017 Petr Kubat <pkubat@redhat.com> - 2.14-4
+- Fix adjunct and shadow password checks in yppasswd (#1401432)
+
 * Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 2.14-3
 - Mass rebuild 2014-01-24
 

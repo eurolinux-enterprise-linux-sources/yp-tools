@@ -1,12 +1,18 @@
-diff -up yp-tools-2.12/src/yppasswd.c.adjunct yp-tools-2.12/src/yppasswd.c
---- yp-tools-2.12/src/yppasswd.c.adjunct	2012-04-23 13:17:47.000988833 +0200
-+++ yp-tools-2.12/src/yppasswd.c	2012-04-23 13:18:01.209802938 +0200
-@@ -449,7 +449,7 @@ verifypassword (struct passwd *pwd, char
- 
+--- yp-tools-2.14/src/yppasswd.c.adjunct	2017-01-04 08:40:17.081225336 +0100
++++ yp-tools-2.14/src/yppasswd.c	2017-01-04 08:41:01.214077346 +0100
+@@ -450,6 +450,7 @@
    passwdlen = get_passwd_len (pwd->pw_passwd);
    if (pwd->pw_passwd[0] 
--      && 0 != strcmp (pwd->pw_passwd, "x") /* don't check shadow passwords */
-+      && 0 != strcmp (pwd->pw_passwd, "##") /* don't check passwords using passwd.adjunct feature */
+       && 0 != strcmp (pwd->pw_passwd, "x") /* don't check shadow passwords */
++      && 0 != strncmp (pwd->pw_passwd, "##", 2) /* don't check passwords using passwd.adjunct feature */
        && uid)
      {
        char *crypted = crypt(pwdstr, pwd->pw_passwd);
+@@ -774,6 +775,7 @@
+       /* We can't check the password with shadow passwords enabled. We
+        * leave the checking to yppasswdd */
+       if (uid != 0 && strcmp (pwd->pw_passwd, "x") != 0 &&
++	  0 != strncmp (pwd->pw_passwd, "##", 2) && /* don't check passwords using passwd.adjunct feature */
+ 	  strcmp (pwd->pw_passwd, hashpass ) != 0)
+ 	{
+ 	  int passwdlen = get_passwd_len (pwd->pw_passwd);
